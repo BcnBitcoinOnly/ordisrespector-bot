@@ -49,12 +49,25 @@ $date = $now->format(DateTimeInterface::RSS);
 $mempoolSpace = new MempoolData('wss://mempool.space/api/v1/ws');
 $ordisrespector = new MempoolData('wss://blackbox.vpn:4200/api/v1/ws');
 
+$txsDiff = $ordisrespector->unconfTxs - $mempoolSpace->unconfTxs;
 $txsDelta = MempoolData::formatDelta($ordisrespector->unconfTxs, $mempoolSpace->unconfTxs);
+
+$nBlocksDiff = $ordisrespector->nMempoolBlocks - $mempoolSpace->nMempoolBlocks;
 $nBlocksDelta = MempoolData::formatDelta($ordisrespector->nMempoolBlocks, $mempoolSpace->nMempoolBlocks);
+
+$nodeMemDiff = $ordisrespector->memoryUsageMBs - $mempoolSpace->memoryUsageMBs;
 $nodeMemDelta = MempoolData::formatDelta($ordisrespector->memoryUsageMBs, $mempoolSpace->memoryUsageMBs);
+
+$noPrioFeeDiff = $ordisrespector->noPrioFee - $mempoolSpace->noPrioFee;
 $noPrioFeeDelta = MempoolData::formatDelta($ordisrespector->noPrioFee, $mempoolSpace->noPrioFee);
+
+$lowPrioFeeDiff = $ordisrespector->lowPrioFee - $mempoolSpace->lowPrioFee;
 $lowPrioFeeDelta = MempoolData::formatDelta($ordisrespector->lowPrioFee, $mempoolSpace->lowPrioFee);
+
+$mediumPrioFeeDiff = $ordisrespector->mediumPrioFee - $mempoolSpace->mediumPrioFee;
 $mediumPrioFeeDelta = MempoolData::formatDelta($ordisrespector->mediumPrioFee, $mempoolSpace->mediumPrioFee);
+
+$highPrioFeeDiff = $ordisrespector->highPrioFee - $mempoolSpace->highPrioFee;
 $highPrioFeeDelta = MempoolData::formatDelta($ordisrespector->highPrioFee, $mempoolSpace->highPrioFee);
 
 $note = <<<TEXT
@@ -82,19 +95,19 @@ Max Prio Fee (s/vB):	**$mempoolSpace->highPrioFee**
 
 #### Tidy Mempool (Ordisrespector node)
 
-Unconfirmed TXs:	**$ordisrespector->unconfTxs**	*($txsDelta)*
+Unconfirmed TXs:	**$ordisrespector->unconfTxs**	*($txsDiff, $txsDelta)*
 
-Unconfirmed Blocks:	**$ordisrespector->nMempoolBlocks**	*($nBlocksDelta)*
+Unconfirmed Blocks:	**$ordisrespector->nMempoolBlocks**	*($nBlocksDiff, $nBlocksDelta)*
 
-Memory Usage (MB):	**$ordisrespector->memoryUsageMBs**	*($nodeMemDelta)*
+Memory Usage (MB):	**$ordisrespector->memoryUsageMBs**	*($nodeMemDiff, $nodeMemDelta)*
 
-No Prio Fee (s/vB):	**$ordisrespector->noPrioFee**	*($noPrioFeeDelta)*
+No Prio Fee (s/vB):	**$ordisrespector->noPrioFee**	*($noPrioFeeDiff, $noPrioFeeDelta)*
 
-Low Prio Fee (s/vB):	**$ordisrespector->lowPrioFee**	*($lowPrioFeeDelta)*
+Low Prio Fee (s/vB):	**$ordisrespector->lowPrioFee**	*($lowPrioFeeDiff, $lowPrioFeeDelta)*
 
-Medium Prio Fee (s/vB):	**$ordisrespector->mediumPrioFee**	*($mediumPrioFeeDelta)*
+Medium Prio Fee (s/vB):	**$ordisrespector->mediumPrioFee**	*($mediumPrioFeeDiff, $mediumPrioFeeDelta)*
 
-Max Prio Fee (s/vB):	**$ordisrespector->highPrioFee**	*($highPrioFeeDelta)*
+Max Prio Fee (s/vB):	**$ordisrespector->highPrioFee**	*($highPrioFeeDiff, $highPrioFeeDelta)*
 
 TEXT;
 
