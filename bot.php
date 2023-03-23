@@ -16,15 +16,16 @@ final class MempoolData
 {
     public readonly int $unconfTxs;
     public readonly float $memoryUsageMBs;
-    public readonly int $economyFee;
+    public readonly int $noPrioFee;
+    public readonly int $minimumFee;
     public readonly int $lowPrioFee;
     public readonly int $mediumPrioFee;
     public readonly int $highPrioFee;
     public readonly int $nMempoolBlocks;
 
-    public function __construct(string $wsEndpoint)
+    public function __construct(string $serverEndpoint)
     {
-        $client = new WebSocket\Client($wsEndpoint);
+        $client = new WebSocket\Client("$serverEndpoint/api/v1/ws");
         $client->text('{"action":"init"}');
         $client->text('{"action":"want","data":["blocks","stats","mempool-blocks","live-2h-chart","watch-mempool"]}');
 
@@ -32,7 +33,8 @@ final class MempoolData
 
         $this->unconfTxs = $raw->mempoolInfo->size;
         $this->memoryUsageMBs = round((float)($raw->mempoolInfo->usage/1000000));
-        $this->economyFee = $raw->fees->economyFee;
+        $this->minimumFee = $raw->fees->minimumFee;
+        $this->noPrioFee = $raw->fees->economyFee;
         $this->lowPrioFee = $raw->fees->hourFee;
         $this->mediumPrioFee = $raw->fees->halfHourFee;
         $this->highPrioFee = $raw->fees->fastestFee;
@@ -49,34 +51,40 @@ final class MempoolData
 
         return abs($c) < $epsilon ? '=' : "$c%";
     }
+
+    public function purgingText(): string
+    {
+        return $this->minimumFee > 1 ?
+            "Purging TXs below (s/vB):	**{$this->minimumFee}**" : 'Not purging';
+    }
 }
 
 $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $date = $now->format(DateTimeInterface::RSS);
 
-$mempoolSpace = new MempoolData($_SERVER['SPAMMY_MEMPOOL_WS']);
+$spammyMempool = new MempoolData($_SERVER['SPAMMY_MEMPOOL_WS']);
 $ordisrespector = new MempoolData($_SERVER['ORDISRESPECTOR_MEMPOOL_WS']);
 
-$txsDiff = $ordisrespector->unconfTxs - $mempoolSpace->unconfTxs;
-$txsDelta = MempoolData::formatDelta($ordisrespector->unconfTxs, $mempoolSpace->unconfTxs);
+$txsDiff = $ordisrespector->unconfTxs - $spammyMempool->unconfTxs;
+$txsDelta = MempoolData::formatDelta($ordisrespector->unconfTxs, $spammyMempool->unconfTxs);
 
-$nBlocksDiff = $ordisrespector->nMempoolBlocks - $mempoolSpace->nMempoolBlocks;
-$nBlocksDelta = MempoolData::formatDelta($ordisrespector->nMempoolBlocks, $mempoolSpace->nMempoolBlocks);
+$nBlocksDiff = $ordisrespector->nMempoolBlocks - $spammyMempool->nMempoolBlocks;
+$nBlocksDelta = MempoolData::formatDelta($ordisrespector->nMempoolBlocks, $spammyMempool->nMempoolBlocks);
 
-$nodeMemDiff = $ordisrespector->memoryUsageMBs - $mempoolSpace->memoryUsageMBs;
-$nodeMemDelta = MempoolData::formatDelta($ordisrespector->memoryUsageMBs, $mempoolSpace->memoryUsageMBs);
+$nodeMemDiff = $ordisrespector->memoryUsageMBs - $spammyMempool->memoryUsageMBs;
+$nodeMemDelta = MempoolData::formatDelta($ordisrespector->memoryUsageMBs, $spammyMempool->memoryUsageMBs);
 
-$economyFeeDiff = $ordisrespector->economyFee - $mempoolSpace->economyFee;
-$economyFeeDelta = MempoolData::formatDelta($ordisrespector->economyFee, $mempoolSpace->economyFee);
+$noPrioFeeDiff = $ordisrespector->noPrioFee - $spammyMempool->noPrioFee;
+$noPrioFeeDelta = MempoolData::formatDelta($ordisrespector->noPrioFee, $spammyMempool->noPrioFee);
 
-$lowPrioFeeDiff = $ordisrespector->lowPrioFee - $mempoolSpace->lowPrioFee;
-$lowPrioFeeDelta = MempoolData::formatDelta($ordisrespector->lowPrioFee, $mempoolSpace->lowPrioFee);
+$lowPrioFeeDiff = $ordisrespector->lowPrioFee - $spammyMempool->lowPrioFee;
+$lowPrioFeeDelta = MempoolData::formatDelta($ordisrespector->lowPrioFee, $spammyMempool->lowPrioFee);
 
-$mediumPrioFeeDiff = $ordisrespector->mediumPrioFee - $mempoolSpace->mediumPrioFee;
-$mediumPrioFeeDelta = MempoolData::formatDelta($ordisrespector->mediumPrioFee, $mempoolSpace->mediumPrioFee);
+$mediumPrioFeeDiff = $ordisrespector->mediumPrioFee - $spammyMempool->mediumPrioFee;
+$mediumPrioFeeDelta = MempoolData::formatDelta($ordisrespector->mediumPrioFee, $spammyMempool->mediumPrioFee);
 
-$highPrioFeeDiff = $ordisrespector->highPrioFee - $mempoolSpace->highPrioFee;
-$highPrioFeeDelta = MempoolData::formatDelta($ordisrespector->highPrioFee, $mempoolSpace->highPrioFee);
+$highPrioFeeDiff = $ordisrespector->highPrioFee - $spammyMempool->highPrioFee;
+$highPrioFeeDelta = MempoolData::formatDelta($ordisrespector->highPrioFee, $spammyMempool->highPrioFee);
 
 $note = <<<TEXT
 Date: $date
@@ -85,19 +93,21 @@ Date: $date
 
 #### Spammy Mempool (mempool.space)
 
-Unconfirmed TXs:	**$mempoolSpace->unconfTxs**
+Unconfirmed TXs:	**$spammyMempool->unconfTxs**
 
-Unconfirmed Blocks:	**$mempoolSpace->nMempoolBlocks**
+Unconfirmed Blocks:	**$spammyMempool->nMempoolBlocks**
 
-Memory Usage (MB):	**$mempoolSpace->memoryUsageMBs**
+Memory Usage (MB):	**$spammyMempool->memoryUsageMBs**
 
-No Prio Fee (s/vB):	**$mempoolSpace->economyFee**
+No Prio Fee (s/vB):	**$spammyMempool->noPrioFee**
 
-Low Prio Fee (s/vB):	**$mempoolSpace->lowPrioFee**
+Low Prio Fee (s/vB):	**$spammyMempool->lowPrioFee**
 
-Medium Prio Fee (s/vB):	**$mempoolSpace->mediumPrioFee**
+Medium Prio Fee (s/vB):	**$spammyMempool->mediumPrioFee**
 
-Max Prio Fee (s/vB):	**$mempoolSpace->highPrioFee**
+Max Prio Fee (s/vB):	**$spammyMempool->highPrioFee**
+
+{$spammyMempool->purgingText()}
 
 ---
 
@@ -109,13 +119,15 @@ Unconfirmed Blocks:	**$ordisrespector->nMempoolBlocks**	*($nBlocksDiff, $nBlocks
 
 Memory Usage (MB):	**$ordisrespector->memoryUsageMBs**	*($nodeMemDiff, $nodeMemDelta)*
 
-No Prio Fee (s/vB):	**$ordisrespector->economyFee**	*($economyFeeDiff, $economyFeeDelta)*
+No Prio Fee (s/vB):	**$ordisrespector->noPrioFee**	*($noPrioFeeDiff, $noPrioFeeDelta)*
 
 Low Prio Fee (s/vB):	**$ordisrespector->lowPrioFee**	*($lowPrioFeeDiff, $lowPrioFeeDelta)*
 
 Medium Prio Fee (s/vB):	**$ordisrespector->mediumPrioFee**	*($mediumPrioFeeDiff, $mediumPrioFeeDelta)*
 
 Max Prio Fee (s/vB):	**$ordisrespector->highPrioFee**	*($highPrioFeeDiff, $highPrioFeeDelta)*
+
+{$ordisrespector->purgingText()}
 
 TEXT;
 
