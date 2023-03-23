@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+if (!isset($_SERVER['SPAMMY_MEMPOOL_WS'])) {
+    die('SPAMMY_MEMPOOL_WS env var is not defined' . PHP_EOL);
+}
+
+if (!isset($_SERVER['ORDISRESPECTOR_MEMPOOL_WS'])) {
+    die('ORDISRESPECTOR_MEMPOOL_WS env var is not defined' . PHP_EOL);
+}
+
 final class MempoolData
 {
     public readonly int $unconfTxs;
@@ -46,8 +54,8 @@ final class MempoolData
 $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $date = $now->format(DateTimeInterface::RSS);
 
-$mempoolSpace = new MempoolData('wss://mempool.space/api/v1/ws');
-$ordisrespector = new MempoolData('wss://blackbox.vpn:4200/api/v1/ws');
+$mempoolSpace = new MempoolData($_SERVER['SPAMMY_MEMPOOL_WS']);
+$ordisrespector = new MempoolData($_SERVER['ORDISRESPECTOR_MEMPOOL_WS']);
 
 $txsDiff = $ordisrespector->unconfTxs - $mempoolSpace->unconfTxs;
 $txsDelta = MempoolData::formatDelta($ordisrespector->unconfTxs, $mempoolSpace->unconfTxs);
