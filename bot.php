@@ -16,7 +16,7 @@ final class MempoolData
 {
     public readonly int $unconfTxs;
     public readonly float $memoryUsageMBs;
-    public readonly int $noPrioFee;
+    public readonly int $economyFee;
     public readonly int $lowPrioFee;
     public readonly int $mediumPrioFee;
     public readonly int $highPrioFee;
@@ -32,7 +32,7 @@ final class MempoolData
 
         $this->unconfTxs = $raw->mempoolInfo->size;
         $this->memoryUsageMBs = round((float)($raw->mempoolInfo->usage/1000000));
-        $this->noPrioFee = $raw->fees->minimumFee;
+        $this->economyFee = $raw->fees->economyFee;
         $this->lowPrioFee = $raw->fees->hourFee;
         $this->mediumPrioFee = $raw->fees->halfHourFee;
         $this->highPrioFee = $raw->fees->fastestFee;
@@ -66,8 +66,8 @@ $nBlocksDelta = MempoolData::formatDelta($ordisrespector->nMempoolBlocks, $mempo
 $nodeMemDiff = $ordisrespector->memoryUsageMBs - $mempoolSpace->memoryUsageMBs;
 $nodeMemDelta = MempoolData::formatDelta($ordisrespector->memoryUsageMBs, $mempoolSpace->memoryUsageMBs);
 
-$noPrioFeeDiff = $ordisrespector->noPrioFee - $mempoolSpace->noPrioFee;
-$noPrioFeeDelta = MempoolData::formatDelta($ordisrespector->noPrioFee, $mempoolSpace->noPrioFee);
+$economyFeeDiff = $ordisrespector->economyFee - $mempoolSpace->economyFee;
+$economyFeeDelta = MempoolData::formatDelta($ordisrespector->economyFee, $mempoolSpace->economyFee);
 
 $lowPrioFeeDiff = $ordisrespector->lowPrioFee - $mempoolSpace->lowPrioFee;
 $lowPrioFeeDelta = MempoolData::formatDelta($ordisrespector->lowPrioFee, $mempoolSpace->lowPrioFee);
@@ -91,7 +91,7 @@ Unconfirmed Blocks:	**$mempoolSpace->nMempoolBlocks**
 
 Memory Usage (MB):	**$mempoolSpace->memoryUsageMBs**
 
-No Prio Fee (s/vB):	**$mempoolSpace->noPrioFee**
+No Prio Fee (s/vB):	**$mempoolSpace->economyFee**
 
 Low Prio Fee (s/vB):	**$mempoolSpace->lowPrioFee**
 
@@ -109,7 +109,7 @@ Unconfirmed Blocks:	**$ordisrespector->nMempoolBlocks**	*($nBlocksDiff, $nBlocks
 
 Memory Usage (MB):	**$ordisrespector->memoryUsageMBs**	*($nodeMemDiff, $nodeMemDelta)*
 
-No Prio Fee (s/vB):	**$ordisrespector->noPrioFee**	*($noPrioFeeDiff, $noPrioFeeDelta)*
+No Prio Fee (s/vB):	**$ordisrespector->economyFee**	*($economyFeeDiff, $economyFeeDelta)*
 
 Low Prio Fee (s/vB):	**$ordisrespector->lowPrioFee**	*($lowPrioFeeDiff, $lowPrioFeeDelta)*
 
