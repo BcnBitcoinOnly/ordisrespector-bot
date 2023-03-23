@@ -16,8 +16,8 @@ final class MempoolData
 {
     public readonly int $unconfTxs;
     public readonly float $memoryUsageMBs;
-    public readonly int $noPrioFee;
     public readonly int $minimumFee;
+    public readonly int $noPrioFee;
     public readonly int $lowPrioFee;
     public readonly int $mediumPrioFee;
     public readonly int $highPrioFee;
@@ -52,10 +52,19 @@ final class MempoolData
         return abs($c) < $epsilon ? '=' : "$c%";
     }
 
-    public function purgingText(): string
+    public function purgingText(MempoolData $spammy = null): string
     {
-        return $this->minimumFee > 1 ?
-            "Purging TXs below (s/vB):	**{$this->minimumFee}**" : 'Not purging';
+        $text = $this->minimumFee > 1 ?
+            "Purging TXs below (s/vB):	**$this->minimumFee**" : 'Not purging TXs (**1** s/vB default)';
+
+        if (null !== $spammy) {
+            $minimumFeeDiff = $this->minimumFee - $spammy->minimumFee;
+            $minimumFeeDelta = self::formatDelta($this->minimumFee, $spammy->minimumFee);
+
+            $text .= "	*($minimumFeeDiff, $minimumFeeDelta)*";
+        }
+
+        return $text;
     }
 }
 
@@ -127,7 +136,7 @@ Medium Prio Fee (s/vB):	**$ordisrespector->mediumPrioFee**	*($mediumPrioFeeDiff,
 
 Max Prio Fee (s/vB):	**$ordisrespector->highPrioFee**	*($highPrioFeeDiff, $highPrioFeeDelta)*
 
-{$ordisrespector->purgingText()}
+{$ordisrespector->purgingText($spammyMempool)}
 
 TEXT;
 
